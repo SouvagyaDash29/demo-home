@@ -17,6 +17,7 @@ import { useExport } from "../context/ExportContext"
 import { useNavigate } from "react-router-dom"
 import RequestModal from "../components/modals/RequestModal"
 import { FaLocationDot } from "react-icons/fa6"
+import CalenderGridView from "../components/CalenderGridView"
 
 const AttendanceHeader = styled.div`
   display: flex;
@@ -915,7 +916,7 @@ const isWithinAllowedRange = (geoPoint, geoConfig) => {
     )}
       
       <Card title="Monthly Attendance">
-        <CalendarContainer>
+        {/* <CalendarContainer>
           <Button variant="ghost" onClick={() => changeMonth(-1)}>
             <FaChevronLeft />
           </Button>
@@ -923,21 +924,21 @@ const isWithinAllowedRange = (geoPoint, geoConfig) => {
           <Button variant="ghost" onClick={() => changeMonth(1)}>
             <FaChevronRight />
           </Button>
-        </CalendarContainer>
-
+        </CalendarContainer> */}
+{/* 
         <WeekDays>
           {weekDays.map((day, index) => (
             <div key={index}>{day}</div>
           ))}
-        </WeekDays>
+        </WeekDays> */}
 
-        <CalendarGrid>
-          {/* Empty cells for days before the first day of the month */}
+        {/* <CalendarGrid>
+          Empty cells for days before the first day of the month
           {Array.from({ length: firstDayOfMonth }).map((_, index) => (
             <DayCell key={`empty-${index}`} />
           ))}
 
-          {/* Days of the month */}
+          Days of the month
           {Array.from({ length: daysInMonth }).map((_, index) => {
             const day = index + 1
             const status = getStatusForDay(day)
@@ -954,7 +955,26 @@ const isWithinAllowedRange = (geoPoint, geoConfig) => {
               </DayCell>
             )
           })}
-        </CalendarGrid>
+        </CalendarGrid> */}
+        <CalenderGridView
+            getCellProps={({ day }) => ({
+              $isCurrent: isCurrentDay(day),
+              $isHoliday: holiday[day],
+              $isWeekend: isWeekend(day) && !holiday[day]
+            })}
+
+            renderBelowDate={({ day }) => {
+              const status = getStatusForDay(day)
+
+              return (
+                status && (
+                  <DayStatus $status={status === "A" ? "P" : status}>
+                    {status === "A" ? "P" : status}
+                  </DayStatus>
+                )
+              )
+            }}
+          />
 
         <StatusGuide>
           <StatusGuideTitle>Status Guide</StatusGuideTitle>

@@ -100,3 +100,7 @@ export const createaddressURL = `${hrendpoint}/address/create/${db_name}/`;
 export const equipentTypeListURL = `${hrendpoint}/get_equipment_type_list/${db_name}/`;
 export const getAvailableRoomslistURL = `${hrendpoint}/get_available_eq_list/${db_name}/`;
 export const getActivitylistURL = `${hrendpoint}/get_project_activity_list/${db_name}/`;
+
+
+export const employeeTaskAllocationData = `${newhrendpoint}/get_emp_allocation_data/${db_name}/`;
+export const processAllocation = `${newhrendpoint}/process_emp_allocation/${db_name}/`;

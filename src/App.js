@@ -108,6 +108,8 @@ import PatientAdmission from "./pages/PatientAdmission";
 import PatentPage from "./components/PatentPage";
 import AwardsPage from "./components/AwardsPage";
 import GlpHeroPage from "./components/glp/GlpHeroPage";
+import TimesheetRouter from "./components/TimesheetRouter";
+import ProjectManagementTimesheet from "./pages/ProjectManagement/ProjectManagementTimesheet";
 // import MyAppriaisal from "./pages/MyAppriaisal";
 
 function App() {
@@ -252,7 +254,10 @@ function App() {
                 <Route path="/attendance-tracking" element={<AttendanceTracking />} />
                 <Route path="/leave-management" element={<LeaveManagement />} />
                 <Route path="/holidays" element={<HolidayCalendar />} />
-                <Route path="/timesheet" element={<TimeSheetManagement />} />
+                {/* <Route path="/timesheet" element={<TimeSheetManagement />} /> */}
+                <Route path="/timesheet" element={<TimesheetRouter />} />
+                <Route path="/managers/timesheet/dashboard" element={<ProjectManagementTimesheet />} />
+                {/* <Route path="/project-management-timesheet" element={<ProjectManagementTimesheet />} /> */}
                 <Route path="/shifts" element={<ShiftScheduling />} />
                 <Route path="/claims" element={<MyClaims />} />
                 <Route path="/appointees" element={<Appointees />} />
