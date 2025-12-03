@@ -260,38 +260,6 @@ const NoLogsMessage = styled.div`
   background: ${({ theme }) => theme.colors?.card || '#fff'};
 `;
 
-// const Button = styled.button`
-//   display: flex;
-//   align-items: center;
-//   justify-content: center;
-//   gap: ${({ theme }) => theme.spacing?.sm || '0.5rem'};
-//   padding: ${({ large, theme }) => 
-//     large ? theme.spacing?.sm || '10px 20px' : '8px 14px'};
-//   border-radius: ${({ theme }) => theme.buttonStyle?.borderRadius || '8px'};
-//   font-weight: 600;
-//   font-size: ${({ large, theme }) => 
-//     large ? theme.fontSizes?.md || '1rem' : theme.fontSizes?.sm || '0.875rem'};
-//   border: none;
-//   cursor: pointer;
-//   transition: ${({ theme }) => theme.transitions?.fast || 'all 0.2s'};
-//   box-shadow: ${({ theme }) => 
-//     theme.buttonStyle?.shadow ? theme.shadows?.sm : 'none'};
-  
-//   &:hover {
-//     transform: ${({ theme }) => 
-//       theme.buttonStyle?.animation ? 'translateY(-2px)' : 'none'};
-//     box-shadow: ${({ theme }) => 
-//       theme.buttonStyle?.shadow && theme.buttonStyle?.animation 
-//         ? theme.shadows?.md 
-//         : theme.buttonStyle?.shadow ? theme.shadows?.sm : 'none'};
-//   }
-  
-//   &:disabled {
-//     opacity: 0.5;
-//     cursor: not-allowed;
-//   }
-// `;
-
 const DetailValue = styled.span`
   font-size: ${({ theme }) => theme.fontSizes?.sm || '0.875rem'};
   color: ${({ theme }) => theme.colors?.text || '#333333'};
@@ -328,131 +296,11 @@ const SecondaryBtn = styled(Button)`
   }
 `;
 
-// ====================== Reusable Helper Components ======================
-const StatusIcon = ({ status }) => {
-  if (status === 'Started' || status === 'In Progress') return <TrendingUp size={16} />;
-  if (status === 'Completed') return <CheckCircle2 size={16} />;
-  return <PauseCircle size={16} />;
-};
-
-const ProgressBar = ({ completed, total, label = 'Progress' }) => {
-  const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
-  return (
-    <Progress>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.8rem' }}>
-        <span style={{color: "#666"}}>{label}</span>
-        {/* <strong style={{color: "#666"}}>{percentage}%</strong> */}
-      </div>
-      <Bar><Fill p={percentage} /></Bar>
-      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#666', marginTop: '4px' }}>
-        {/* <span>{completed}h spent</span> */}
-        <span>{completed}</span>
-        {/* <span>{total}h total</span> */}
-        <span>{total}</span>
-      </div>
-    </Progress>
-  );
-};
-
-const ActivityLogs = ({ logs, isOpen, onToggle }) => {
-  const logEntries = Object.values(logs || {});
-
-  return (
-    <LogsSection>
-      <LogsHeader onClick={onToggle}>
-        <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: "#666" }}>
-          <FileText size={16} /> Activity Logs <span style={{ fontWeight: 400 }}>({logEntries.length})</span>
-        </span>
-        <LogsToggle isOpen={isOpen}><ChevronDown size={18}  /></LogsToggle>
-      </LogsHeader>
-      <LogsContent isOpen={isOpen}>
-        {logEntries.length === 0 ? (
-          <NoLogsMessage>No activity recorded yet</NoLogsMessage>
-        ) : (
-          <LogsGrid>
-            {logEntries.map((log, i) => (
-              <LogRow key={i}>
-                <LogDate><Calendar size={14} />{log.date}</LogDate>
-                <LogTime><Clock size={14} />{log.check_in?.time} - {log.check_out?.time || '—'}</LogTime>
-                <LogStats>
-                  <LogBadge><Timer size={12} />Effort : {log.effort}h</LogBadge>
-                  <LogBadge><Package size={12} />No of item audit: {log.no_of_items}</LogBadge>
-                </LogStats>
-                {log.remarks && (
-                  <LogRemark><FileText size={14} />{log.remarks || "No Remarks found"}</LogRemark>
-                )}
-              </LogRow>
-            ))}
-          </LogsGrid>
-        )}
-      </LogsContent>
-    </LogsSection>
-  );
-};
-
-// ====================== Action Buttons Logic ======================
-// const ActionButtons = ({ activity }) => {
-//   const { show_start_button, show_end_button, hasPendingCheckout, pendingCheckoutDate, complete, activity_status } = activity;
-  
-//   if (hasPendingCheckout && pendingCheckoutDate !== getTodayApiDateStr()) {
-//     return (
-//       <PrimaryBtn large onClick={() => console.log('Complete Checkout', activity.id)}>
-//         <CheckCircle2 /> Complete Checkout
-//       </PrimaryBtn>
-//     );
-//   }
-
-//   if (show_start_button && !complete) {
-//     return (
-//       <PrimaryBtn large onClick={() => console.log('Start Activity', activity.id)}>
-//         <PlayCircle /> Start Activity
-//       </PrimaryBtn>
-//     );
-//   }
-//   if (show_end_button && !complete) {
-//     return (
-//       <>
-//         <SuccessBtn large onClick={() => console.log('Mark Complete', activity.id)}>
-//           <CheckCircle2 /> Mark Complete
-//         </SuccessBtn>
-
-//         <SecondaryBtn onClick={() => console.log('Continue Tomorrow', activity.id)}>
-//           <PauseCircle /> Continue Tomorrow
-//         </SecondaryBtn>
-//       </>
-//     );
-//   }
-
-//   if (!show_start_button && !show_end_button && !hasPendingCheckout && !complete) {
-//     return <SecondaryBtn large disabled><Clock /> Awaiting Start</SecondaryBtn>;
-//   }
-
-// if (complete) {
-//   return (
-//     <div className="text-green-600 font-semibold text-base flex items-center gap-2">
-//       <CheckCircle2 /> Project is complete
-//     </div>
-//   );
-// }
-
-//   return null;
-// };
-
-// ====================== Main Card Component ======================
 export const ActivityCard = ({ activity, filterType, onAction }) => {
   const [isLogsOpen, setIsLogsOpen] = useState(false);
 
   const progress = activity.total_no_of_items || 0;
   const totalEffort = activity.original_P.no_of_items || 0;
-
- const {
-    show_start_button,
-    show_end_button,
-    hasPendingCheckout,
-    pendingCheckoutDate,
-    complete,
-    id
-  } = activity;
 
   const isActivityStart = !!activity.original_A;
 
@@ -497,84 +345,176 @@ const TodayBtnComponent = activity.planned_end_date === getTodayApiDateStr() ? S
           />}
         </Info>
 
-        {(filterType === "today") &&
-        <Actions>
-          {hasPendingCheckout && pendingCheckoutDate !== getTodayApiDateStr() ? (
-            <>
-            <PrimaryBtn size="md" onClick={() => onAction({ type: "checkout_yesterday", activity })}>
-              <CheckCircle2 /> Checkout For Yesterday
-            </PrimaryBtn>
-             {!hasPendingCheckout && 
-              (isActivityStart ? (
-                <PrimaryBtn size="md" onClick={() => onAction({ type: "resume", activity })}>
-                  <PlayCircle /> Resume Activity
-                </PrimaryBtn>
-              ) : (
-                <PrimaryBtn size="md" onClick={() => onAction({ type: "start", activity })}>
-                  <PlayCircle /> Start Activity
-                </PrimaryBtn>
-              ))}
-            </>
-          ) : (todayCheckedIn && todayCheckedOut) ? (
-            // Completed for today (both check-in and check-out present)
-            <div style={{ color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <CheckCircle2 /> Project is completed for today
-            </div>
-          ) : (!isActivityStart && !todayCheckedIn) ? (
-            // Not started ever -> Start Activity
-            <PrimaryBtn size="md" onClick={() => onAction({ type: "start", activity })}>
-              <PlayCircle /> Start Activity
-            </PrimaryBtn>
-          ) : (isActivityStart && !todayCheckedIn) ? (
-            // Original_A exists but no check-in for today -> Resume Activity (next day scenario)
-            <PrimaryBtn size="md" onClick={() => onAction({ type: "resume", activity })}>
-              <PlayCircle /> Resume Activity
-            </PrimaryBtn>
-          ) : (todayCheckedIn && !todayCheckedOut) ? (
-            // Checked in today and not yet checked out -> show Complete + Continue Tomorrow
-             <>
-        { /* Decide which button is Success vs Secondary based on planned_end_date === today */ }
-        {(() => {
-          const plannedEnd = activity.planned_end_date || activity.original_P?.planned_end_date;
-          const isPlannedEndToday = plannedEnd === todayISO;
-          // If planned_end_date is today's date => Mark Complete is SuccessBtn
-          if (isPlannedEndToday) {
-            return (
-              <>
-                <SuccessBtn size="lg" onClick={() => onAction({ type: "complete", activity })}>
-                  <CheckCircle2 /> Completed
-                </SuccessBtn>
-
-                <SecondaryBtn size="sm" onClick={() => onAction({ type: "continue", activity })}>
-                  <PauseCircle /> Continue Tomorrow
-                </SecondaryBtn>
-              </>
-            )
-          } else {
-            // otherwise swap: Continue is Success, Complete is Secondary
-            return (
-              <>
-                <SecondaryBtn size="lg" onClick={() => onAction({ type: "complete", activity })}>
-                  <CheckCircle2 /> Completed
-                </SecondaryBtn>
-
-                <SuccessBtn size="sm" onClick={() => onAction({ type: "continue", activity })}>
-                  <PauseCircle /> Continue Tomorrow
-                </SuccessBtn>
-              </>
-            )
-          }
-        })()}
-      </>
-          ) : (!show_start_button && !show_end_button && !hasPendingCheckout && !complete) ? (
-            <SecondaryBtn size='md' disabled><Clock /> Awaiting Start</SecondaryBtn>
-          ) : complete ? (
-            <div style={{ color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
-              <CheckCircle2 /> Project is complete
-            </div>
-          ) : null}
-        </Actions>}
+        {filterType === "today" && (
+          <Actions>
+            <TodayActionButtons
+              activity={activity}
+              todayCheckedIn={todayCheckedIn}
+              todayCheckedOut={todayCheckedOut}
+              isActivityStart={isActivityStart}
+              hasPendingCheckout={activity.hasPendingCheckout}
+              pendingCheckoutDate={activity.pendingCheckoutDate}
+              complete={activity.complete}
+              onAction={onAction}
+              todayISO={todayISO}
+              getTodayApiDateStr={getTodayApiDateStr}
+            />
+          </Actions>
+        )}
       </Flex>
     </CardHover>
+  );
+};
+
+//Status Icon
+const StatusIcon = ({ status }) => {
+  if (status === 'Started' || status === 'In Progress') return <TrendingUp size={16} />;
+  if (status === 'Completed') return <CheckCircle2 size={16} />;
+  return <PauseCircle size={16} />;
+};
+
+//ProgressBar for audit Items
+const ProgressBar = ({ completed, total, label = 'Progress' }) => {
+  const percentage = total > 0 ? Math.round((completed / total) * 100) : 0;
+  return (
+    <Progress>
+      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px', fontSize: '0.8rem' }}>
+        <span style={{color: "#666"}}>{label}</span>
+        {/* <strong style={{color: "#666"}}>{percentage}%</strong> */}
+      </div>
+      <Bar><Fill p={percentage} /></Bar>
+      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.75rem', color: '#666', marginTop: '4px' }}>
+        {/* <span>{completed}h spent</span> */}
+        <span>{completed}</span>
+        {/* <span>{total}h total</span> */}
+        <span>{total}</span>
+      </div>
+    </Progress>
+  );
+};
+
+//Yesterday Activity 
+const ActivityLogs = ({ logs, isOpen, onToggle }) => {
+  const logEntries = Object.values(logs || {});
+
+  return (
+    <LogsSection>
+      <LogsHeader onClick={onToggle}>
+        <span style={{ display: 'flex', alignItems: 'center', gap: '6px', color: "#666" }}>
+          <FileText size={16} /> Activity Logs <span style={{ fontWeight: 400 }}>({logEntries.length})</span>
+        </span>
+        <LogsToggle isOpen={isOpen}><ChevronDown size={18}  /></LogsToggle>
+      </LogsHeader>
+      <LogsContent isOpen={isOpen}>
+        {logEntries.length === 0 ? (
+          <NoLogsMessage>No activity recorded yet</NoLogsMessage>
+        ) : (
+          <LogsGrid>
+            {logEntries.map((log, i) => (
+              <LogRow key={i}>
+                <LogDate><Calendar size={14} />{log.date}</LogDate>
+                <LogTime><Clock size={14} />{log.check_in?.time} - {log.check_out?.time || '—'}</LogTime>
+                <LogStats>
+                  <LogBadge><Timer size={12} />Effort : {log.effort}h</LogBadge>
+                  <LogBadge><Package size={12} />No of item audit: {log.no_of_items}</LogBadge>
+                </LogStats>
+                {log.remarks && (
+                  <LogRemark><FileText size={14} />{log.remarks || "No Remarks found"}</LogRemark>
+                )}
+              </LogRow>
+            ))}
+          </LogsGrid>
+        )}
+      </LogsContent>
+    </LogsSection>
+  );
+};
+const StatusMessage = ({ children }) => (
+  <div style={{ color: '#10b981', fontWeight: 600, display: 'flex', alignItems: 'center', gap: 8 }}>
+    <CheckCircle2 size={18} />
+    {children}
+  </div>
+);
+
+// Dedicated Today Action Buttons — Clean, Readable, No Nesting Hell
+const TodayActionButtons = ({
+  activity,
+  todayCheckedIn,
+  todayCheckedOut,
+  isActivityStart,
+  hasPendingCheckout,
+  pendingCheckoutDate,
+  complete,
+  onAction,
+  todayISO,
+  getTodayApiDateStr,
+}) => {
+  const todayApiDate = getTodayApiDateStr();
+  const plannedEnd = activity.planned_end_date || activity.original_P?.planned_end_date;
+  const isPlannedEndToday = plannedEnd === todayISO;
+
+  // 1. Fully complete
+  if (complete) {
+    return <StatusMessage>Project is complete</StatusMessage>;
+  }
+
+  // 2. Completed for today
+  if (todayCheckedIn && todayCheckedOut) {
+    return <StatusMessage>Project is completed for today</StatusMessage>;
+  }
+
+  // 3. Pending checkout from yesterday
+  if (hasPendingCheckout && pendingCheckoutDate !== todayApiDate) {
+    return (
+      <PrimaryBtn size="md" onClick={() => onAction({ type: "checkout_yesterday", activity })}>
+        <CheckCircle2 /> Checkout For Yesterday
+      </PrimaryBtn>
+    );
+  }
+
+  // 4. Checked in today → Show Complete / Continue Tomorrow
+  if (todayCheckedIn && !todayCheckedOut) {
+    return isPlannedEndToday ? (
+      <>
+        <SuccessBtn size="lg" onClick={() => onAction({ type: "complete", activity })}>
+          <CheckCircle2 /> Completed
+        </SuccessBtn>
+        <SecondaryBtn size="sm" onClick={() => onAction({ type: "continue", activity })}>
+          <PauseCircle /> Continue Tomorrow
+        </SecondaryBtn>
+      </>
+    ) : (
+      <>
+        <SuccessBtn size="sm" onClick={() => onAction({ type: "continue", activity })}>
+          <PauseCircle /> Continue Tomorrow
+        </SuccessBtn>
+        <SecondaryBtn size="lg" onClick={() => onAction({ type: "complete", activity })}>
+          <CheckCircle2 /> Completed
+        </SecondaryBtn>
+      </>
+    );
+  }
+
+  // 5. Not checked in today
+  if (!todayCheckedIn) {
+    if (isActivityStart) {
+      return (
+        <PrimaryBtn size="md" onClick={() => onAction({ type: "resume", activity })}>
+          <PlayCircle /> Resume Activity
+        </PrimaryBtn>
+      );
+    }
+    return (
+      <PrimaryBtn size="md" onClick={() => onAction({ type: "start", activity })}>
+        <PlayCircle /> Start Activity
+      </PrimaryBtn>
+    );
+  }
+
+  // 6. Fallback: Awaiting start (future scheduled)
+  return (
+    <SecondaryBtn size="md" disabled>
+      <Clock /> Awaiting Start
+    </SecondaryBtn>
   );
 };

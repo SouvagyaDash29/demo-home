@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react'
 import Layout from '../../components/Layout'
 import styled from 'styled-components'
 import Button from '../../components/Button'
-import { FaFilter, FaUserCircle } from 'react-icons/fa'
+import { FaDumpster, FaFilter, FaUserCircle } from 'react-icons/fa'
 import { useNavigate } from 'react-router-dom'
 import { toast } from 'react-toastify'
 import { getEmpAllocationData, postAllocationData } from '../../services/productServices'
@@ -10,7 +10,7 @@ import { normalizeProjects, formatToDDMMYYYY, getMonthRange } from './utils/util
 import { useTheme } from '../../context/ThemeContext'
 import Card from '../../components/Card'
 import AuditActivityList, { ActivityCard } from './demo'
-import { addDays, constructFrom, isAfter, isBefore, isSameDay, parse } from 'date-fns'
+import { addDays, constructFrom, endOfWeek, isAfter, isBefore, isSameDay, isWithinInterval, parse, startOfWeek } from 'date-fns'
 import { formatAPITime } from './utils/utils'
 import { getCurrentDateTimeDefaults } from './utils/utils'
 import ConfirmPopup from '../../components/modals/ConfirmPopup'
@@ -63,11 +63,34 @@ const ClaimsHeader = styled.div`
     align-items: flex-start;
   }
 `
+// Helper: Parse date safely (dd-MMM-yyyy format)
+const parseDateSafe = (dateStr) => {
+  if (!dateStr) return null;
+  return parse(dateStr, "dd-MMM-yyyy", new Date());
+};
+
+// Get next week's Monday → Sunday
+const getNextWeekRange = () => {
+  const today = new Date();
+  const nextMonday = addDays(startOfWeek(addDays(today, 7), { weekStartsOn: 1 }), 0);
+  const nextSunday = endOfWeek(nextMonday, { weekStartsOn: 1 });
+  return { start: nextMonday, end: nextSunday };
+};
+
+// Check if project date range overlaps with given range
+const hasOverlap = (projStart, projEnd, rangeStart, rangeEnd) => {
+  if (!projStart || !projEnd) return false;
+  return isWithinInterval(projStart, { start: rangeStart, end: rangeEnd }) ||
+         isWithinInterval(projEnd, { start: rangeStart, end: rangeEnd }) ||
+         (isBefore(projStart, rangeStart) && isAfter(projEnd, rangeEnd));
+};
+
 
 const ProjectManagementTimesheetEmployee = () => {
   const theme = useTheme();
   const [employeeActivity, setEmployeeActivity] = useState([]);
   const [dayFilter, setDayFilter] = useState("today");
+  const [selectedStatus, setSelectedStatus] = useState("All");
   const [showCustomRange, setShowCustomRange] = useState(false);
   const [isFormModalOpen, setIsFromModalOpen] = useState(false);
   const [selectedProject, setSelectdeProject] = useState(null);
@@ -203,17 +226,17 @@ const ProjectManagementTimesheetEmployee = () => {
             formData.append(key, value)
           }
         })
-  //       for (let [key, value] of formData.entries()) {
-  //   console.log(key, value);
-  // }
+        for (let [key, value] of formData.entries()) {
+    console.log(key, value);
+  }
   
-        const res = await postAllocationData(formData)
+        // const res = await postAllocationData(formData)
   
-        if (res?.status === 200) {
-          toast.success(isAddMode ? "Check-in Successful" : "Activity Completed")
-          return true
-        }
-        return false
+        // if (res?.status === 200) {
+        //   toast.success(isAddMode ? "Check-in Successful" : "Activity Completed")
+        //   return true
+        // }
+        // return false
       } catch (error) {
         toast.error("Unable to submit activity. Try again later..")
         // toast.error("Something went wrong")
@@ -223,104 +246,222 @@ const ProjectManagementTimesheetEmployee = () => {
       }
     }
 
-    const handleActivityAction = ({ type, activity }) => {
-  if (type === "start") {
-    setConfirmPopup({
-      isOpen: true,
-      title: "Start Activity",
-      message: "Are you sure you want to start this activity?",
-      onConfirm: async () => {
-        await handleActivitySubmit({ project: activity, mode: "ADD" });
-        setConfirmPopup(prev => ({ ...prev, isOpen: false }));
-        fetchEmpAllocationData();
-      },
-    });
-    return;
-  }
+//     const handleActivityAction = ({ type, activity }) => {
+//   if (type === "start") {
+//     setConfirmPopup({
+//       isOpen: true,
+//       title: "Start Activity",
+//       message: "Are you sure you want to start this activity?",
+//       onConfirm: async () => {
+//         await handleActivitySubmit({ project: activity, mode: "ADD" });
+//         setConfirmPopup(prev => ({ ...prev, isOpen: false }));
+//         fetchEmpAllocationData();
+//       },
+//     });
+//     return;
+//   }
 
-  if (type === "resume") {
-  setConfirmPopup({
-    isOpen: true,
+//   if (type === "resume") {
+//   setConfirmPopup({
+//     isOpen: true,
+//     title: "Resume Activity",
+//     message: "Do you want to resume this activity?",
+//     onConfirm: async () => {
+//       await handleActivitySubmit({
+//         project: activity,
+//         mode: "UPDATE",     // resume goes in update mode
+//         data: { startTime: getCurrentDateTimeDefaults().currentTime }
+//       });
+
+//       setConfirmPopup(prev => ({ ...prev, isOpen: false }));
+//       fetchEmpAllocationData();
+//     },
+//   });
+//   return;
+// }
+
+//   if (type === "continue") {
+//     setSelectdeProject({
+//       ...activity,
+//       modalContext: { type: "continue" }
+//     });
+//     setIsFromModalOpen(true);
+//     return;
+//   }
+
+//   if (type === "complete") {
+//     setSelectdeProject({
+//       ...activity,
+//       modalContext: { type: "complete" }
+//     });
+//     setIsFromModalOpen(true);
+//     return;
+//   }
+
+//   if (type === "checkout_yesterday") {
+//   const yesterday = getYesterday(); // you already use this in ProjectAddForm
+
+//   setSelectdeProject({
+//     ...activity,
+//     modalContext: {
+//       type: "checkout_yesterday",
+//       forceMode: "UPDATE",
+//       forcedDate: yesterday.apiDate   // <-- IMPORTANT
+//     }
+//   });
+
+//   setIsFromModalOpen(true);
+//   return;
+// }
+// };
+
+// utils/activityActions.js
+const refreshActivities = async () => {
+  // Always fetch current month (your original behavior)
+  await fetchEmpAllocationData(); 
+  
+  // Optional: close modal & popup automatically
+  setIsFromModalOpen(false);
+  setConfirmPopup(prev => ({ ...prev, isOpen: false }));
+  
+  // Optional: scroll to top
+  window.scrollTo({ top: 0, behavior: 'smooth' });
+};
+
+const ACTIVITY_ACTIONS = {
+
+start: {
+    title: "Start Activity",
+    message: "Are you sure you want to start this activity?",
+    handler: async (activity, submit, refresh) => {
+      return submit({ project: activity, mode: "ADD" });
+    },
+  },
+
+  resume: {
     title: "Resume Activity",
     message: "Do you want to resume this activity?",
-    onConfirm: async () => {
-      await handleActivitySubmit({
+    handler: async (activity, submit, refresh) => {
+      const { currentTime } = getCurrentDateTimeDefaults();
+      return submit({
         project: activity,
-        mode: "UPDATE",     // resume goes in update mode
-        data: { startTime: getCurrentDateTimeDefaults().currentTime }
+        mode: "UPDATE",
+        data: { startTime: currentTime }
       });
-
-      setConfirmPopup(prev => ({ ...prev, isOpen: false }));
-      fetchEmpAllocationData();
     },
-  });
-  return;
-}
+  },
 
-  if (type === "continue") {
-    setSelectdeProject({
-      ...activity,
-      modalContext: { type: "continue" }
-    });
-    setIsFromModalOpen(true);
-    return;
-  }
+  continue: {
+    modal: true,
+    modalContext: { type: "continue" }
+  },
+  
+  complete: {
+    modal: true,
+    modalContext: { type: "complete" }
+  },
 
-  if (type === "complete") {
-    setSelectdeProject({
-      ...activity,
-      modalContext: { type: "complete" }
-    });
-    setIsFromModalOpen(true);
-    return;
-  }
-
-  if (type === "checkout_yesterday") {
-  const yesterday = getYesterday(); // you already use this in ProjectAddForm
-
-  setSelectdeProject({
-    ...activity,
+  checkout_yesterday: {
+    modal: true,
     modalContext: {
       type: "checkout_yesterday",
       forceMode: "UPDATE",
-      forcedDate: yesterday.apiDate   // <-- IMPORTANT
+      forcedDate: getYesterday().apiDate
     }
-  });
+  }
 
-  setIsFromModalOpen(true);
-  return;
-}
 };
 
-const classifyActivityByDate = (plannedStartDate) => {
+// In your component — SUPER CLEAN
+const handleActivityAction = ({ type, activity }) => {
+  const action = ACTIVITY_ACTIONS[type];
+
+  if (action?.modal) {
+    setSelectdeProject({
+      ...activity,
+      modalContext: action.modalContext
+    });
+    setIsFromModalOpen(true);
+    return;
+  }
+
+  if (action?.handler) {
+    setConfirmPopup({
+      isOpen: true,
+      title: action.title,
+      message: action.message,
+      onConfirm: async () => {
+        const success = await action.handler(activity, handleActivitySubmit, refreshActivities);
+        if (success) {
+          await refreshActivities(); // This does everything
+        }
+        setConfirmPopup(prev => ({ ...prev, isOpen: false }));
+      }
+    });
+  }
+};
+
+const getFilteredAndSortedActivities = () => {
   const today = new Date();
-  // const startDate = new Date(plannedStartDate);
-  const startDate = parseDateSafe(plannedStartDate);
+  const todayISODate = today.toISOString().split('T')[0];
+  const nextWeek = getNextWeekRange();
 
+  return employeeActivity
+    .filter(activity => {
+      const startDate = parseDateSafe(activity.planned_start_date);
+      const endDate = parseDateSafe(activity.planned_end_date);
+      const isIncomplete = !activity.complete;
+      const status = activity.project_period_status || "Pending";
 
-  if (isSameDay(startDate, today)) return "today";
-  if (isBefore(startDate, today)) return "past";
-  if (isAfter(startDate, today) && startDate <= addDays(today, 7)) return "next7";
+      // 1. Status Filter (you said you’ll add dropdown later — placeholder)
+      // if (selectedStatus !== "All" && status !== selectedStatus) return false;
+      if (selectedStatus !== "All" && activity.project_period_status !== selectedStatus) return false;
 
-  return "future"; // more than 7 days away (optional)
+      // 2. Period Filter Rules
+      if (dayFilter === "today") {
+        const isTodayInRange = startDate && endDate &&
+          (isSameDay(today, startDate) || 
+           isSameDay(today, endDate) || 
+           (isAfter(today, startDate) && isBefore(today, endDate)));
+
+        return isIncomplete || isTodayInRange;
+      }
+
+      if (dayFilter === "next7") {
+        if (isIncomplete) return false; // Critical Rule: Incomplete → NEVER in Next7
+
+        if (!startDate || !endDate) return false;
+
+        return hasOverlap(startDate, endDate, nextWeek.start, nextWeek.end);
+      }
+
+      if (dayFilter === "past7") {
+        // Show past activities (you already handle logs separately)
+        return isBefore(startDate, today) || isBefore(endDate, today);
+      }
+
+      if (dayFilter === "custom") {
+        if (isIncomplete) return true;
+        if (!startDate || !endDate) return false;
+
+        const rangeStart = new Date(dateRange.start);
+        const rangeEnd = new Date(dateRange.end);
+        return hasOverlap(startDate, endDate, rangeStart, rangeEnd);
+      }
+
+      return true; // fallback
+    })
+    .sort((a, b) => {
+      // Rule: In "Today" tab → Completed projects go to bottom
+      if (dayFilter === "today") {
+        if (a.complete && !b.complete) return 1;
+        if (!a.complete && b.complete) return -1;
+      }
+      return 0;
+    });
 };
 
-const parseDateSafe = (dateStr) => {
-  return parse(dateStr, "dd-MMM-yyyy", new Date());
-};
-
-const filteredActivities = employeeActivity.filter(activity => {
-  const category = classifyActivityByDate(activity.planned_start_date);
-
-  if (dayFilter === "today") return category === "today";
-  if (dayFilter === "past7") return category === "past";
-  if (dayFilter === "next7") return category === "next7";
-  if (dayFilter === "custom") return true; // handled by date range
-
-  return true;
-});
-
-
+const filteredActivities = getFilteredAndSortedActivities();
 
   return (
     <Layout title="My Audit Activities">
@@ -332,56 +473,6 @@ const filteredActivities = employeeActivity.filter(activity => {
           </Button>}
       </ClaimsHeader>
     <Card hoverable={false} >      
-      {/* <FilterContainer>
-        <FilterSelect
-          name="dayFilter"
-          value={dayFilter}
-          onChange={(e) => {
-            const value = e.target.value
-            setDayFilter(value)
-            if (value === "custom") {
-              setShowCustomRange(true)
-            } else {
-              setShowCustomRange(false)
-            }
-          }}
-        >
-          <option value="past7">Past Activity Logs</option>
-          <option value="today">Today</option>
-          <option value="next7">Upcoming 7 Days Activity Logs</option>
-          <option value="custom">Custom Range</option>
-        </FilterSelect>
-
-        {showCustomRange && (
-          <>
-            <DateInput type="date" value={dateRange.start} onChange={(e) => setDateRange((prev) => ({ ...prev, start: e.target.value }))} />
-            <span>to</span>
-            <DateInput type="date" value={dateRange.end} onChange={(e) => setDateRange((prev) => ({ ...prev, end: e.target.value }))} />
-
-            <Button variant="outline" size="sm" onClick={() => {
-              if (dayFilter === "custom") {
-                fetchEmpAllocationData(dateRange.start, dateRange.end)
-              }
-            }}>
-              <FaFilter /> Filter
-            </Button>
-          </>
-        )}
-      </FilterContainer> */}
-
-      {/* <AuditActivityList 
-        projects={employeeActivity}
-        onStart={handleStartProject}
-        onContinue={handleOpenContinueModal}
-        onComplete={handleOpenCompleteModal}
-        submittingProjectId={submittingProjectId}
-        isTodayView={dayFilter === "today"}
-        dayFilter={dayFilter}
-     />  */}
-     {/* <AuditActivityList activities={employeeActivity} /> */}
-     {/* <AuditActivityList activities={employeeActivity} /> */}
-     {/* <AuditActivityList activities={employeeActivity} /> */}
-
      <Container>
       <div style={{display: "flex", justifyContent: "space-between", alignItems: "center"}}>
            {/* <Title>My Audit Activities</Title> */}
@@ -390,6 +481,19 @@ const filteredActivities = employeeActivity.filter(activity => {
             </Title></div>
  <FilterContainer>
         <FilterSelect
+          name="selectedStatus"
+          value={selectedStatus}
+          onChange={(e) => {
+            const value = e.target.value
+            setSelectedStatus(value)
+          }}
+        >
+          <option value="All">All</option>
+          <option value="Pending">Pending</option>
+          <option value="Planned">Planned</option>
+          <option value="Complete">Complete</option>
+        </FilterSelect>
+        <FilterSelect
           name="dayFilter"
           value={dayFilter}
           onChange={(e) => {
@@ -423,25 +527,28 @@ const filteredActivities = employeeActivity.filter(activity => {
             </Button>
           </>
         )}
+            <Button variant="outline" size="sm" onClick={() => {
+              setDayFilter("today"); setSelectedStatus("All")
+            }}>
+              <FaDumpster /> Clear Filter
+            </Button>
       </FilterContainer>
       </div>
-           {employeeActivity.map(activity => (
-             <ActivityCard 
-                key={activity.id}
-                activity={activity}
-                filterType={dayFilter}
-                onAction={handleActivityAction}
-              />
-           ))}
-           {employeeActivity.length === 0 && (
-             <Card style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>
-               No activities assigned yet.
-             </Card>
-           )}
+          {filteredActivities.length === 0 ? (
+          <Card style={{ textAlign: 'center', padding: '2rem', color: '#999' }}>
+            No activities found for selected filter.
+          </Card>
+        ) : (
+          filteredActivities.map(activity => (
+            <ActivityCard
+              key={activity.id}
+              activity={activity}
+              filterType={dayFilter}
+              onAction={handleActivityAction}
+            />
+          ))
+        )}
          </Container>
-
-
-
     </Card>
 
     {isFormModalOpen && selectedProject && (
@@ -449,9 +556,7 @@ const filteredActivities = employeeActivity.filter(activity => {
               isOpen={isFormModalOpen}
               onClose={() => setIsFromModalOpen(false)}
               activity={selectedProject}
-              onSubmit={() => {
-                fetchEmpAllocationData()
-              }}
+              onSubmit={() => {refreshActivities() }}
               onActivitySubmit={handleActivitySubmit}
               // isSubmitting={submittingProjectId === selectedProject?.id}
               modalContext={selectedProject?.modalContext}
